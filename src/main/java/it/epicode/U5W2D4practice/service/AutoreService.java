@@ -3,10 +3,14 @@ package it.epicode.U5W2D4practice.service;
 import it.epicode.U5W2D4practice.dto.AutoreDto;
 import it.epicode.U5W2D4practice.exception.AutoreNotFoundException;
 import it.epicode.U5W2D4practice.model.Autore;
+import it.epicode.U5W2D4practice.service.CloudinaryService;
 import it.epicode.U5W2D4practice.repository.AutoreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -18,14 +22,41 @@ public class AutoreService {
     @Autowired
     private BlogPostService blogPostService;
 
-    public Autore saveAutore(AutoreDto autoreDto){
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private EmailService emailService;
+
+    public Autore saveAutore(AutoreDto autoreDto) {
         Autore autore = new Autore();
         autore.setNome(autoreDto.getNome());
         autore.setCognome(autoreDto.getCognome());
         autore.setEmail(autoreDto.getEmail());
         autore.setDataDiNascita(autoreDto.getDataDiNascita());
-        autore.setAvatar("https://www.google.com/url?q=https://ui-avatars.com/api/?name%3DMario%2BRossi&sa=D&source=editors&ust=1749560445102304&usg=AOvVaw1cbVa4xxrprdQr5bdWbxLC" + autoreDto.getNome() + " " + autoreDto.getCognome());
+        autore.setAvatar(autoreDto.getAvatar());
+
         return autoreRepository.save(autore);
+    }
+
+
+    public Autore saveAutoreConUpload(String nome, String cognome, String email, String dataDiNascita, MultipartFile avatar) throws IOException {
+        String avatarUrl = cloudinaryService.uploadFile(avatar);
+        AutoreDto autoreDto = new AutoreDto();
+        autoreDto.setNome(nome);
+        autoreDto.setCognome(cognome);
+        autoreDto.setEmail(email);
+        autoreDto.setDataDiNascita(LocalDate.parse(dataDiNascita)); // attenzione al formato
+        autoreDto.setAvatar(avatarUrl);
+        Autore autore = saveAutore(autoreDto);
+
+        emailService.sendEmail(
+                email,
+                "Benvenuto " + nome + "!",
+                "Il tuo profilo è stato creato con successo. Grazie per esserti unito a noi!"
+        );
+
+        return autore;
     }
 
     public Autore getAutore(int id) throws AutoreNotFoundException {

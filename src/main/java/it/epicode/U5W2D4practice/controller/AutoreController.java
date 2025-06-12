@@ -7,7 +7,9 @@ import it.epicode.U5W2D4practice.service.AutoreService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -15,10 +17,16 @@ public class AutoreController {
     @Autowired
     private AutoreService autoreService;
 
-    @PostMapping("/autori")
+    @PostMapping(value = "/autori", consumes = "multipart/form-data")
     @ResponseStatus(HttpStatus.CREATED)
-    public Autore saveAutore(@RequestBody AutoreDto autoreDto) {
-        return autoreService.saveAutore(autoreDto);
+    public Autore saveAutore(
+            @RequestParam String nome,
+            @RequestParam String cognome,
+            @RequestParam String email,
+            @RequestParam String dataDiNascita, // formato: YYYY-MM-DD
+            @RequestParam MultipartFile avatar
+    ) throws IOException {
+        return autoreService.saveAutoreConUpload(nome, cognome, email, dataDiNascita, avatar);
     }
 
     @GetMapping("/autori/{id}")
